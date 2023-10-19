@@ -92,23 +92,11 @@ class GearmanExecute extends AbstractGearmanService
         $this->stopWorkSignalReceived = false;
     }
 
-    public function addSystemSignalListener(): void
-    {
-        if (extension_loaded('pcntl')) {
-            pcntl_async_signals(true);
-
-            pcntl_signal(SIGTERM, [$this, 'handleSystemSignal']);
-            pcntl_signal(SIGINT, [$this, 'handleSystemSignal']);
-            pcntl_signal(SIGHUP, [$this, 'handleSystemSignal']);
-
-            pcntl_signal_dispatch();
-        }
-    }
-
     /**
-     * Toggles that work should be stopped, we only subscribe to SIGTERM,SIGINT and SIGHUP
+     * Toggles that work should be stopped, we only subscribe to SIGTERM and SIGHUP
+     * @param int $signo Signal number
      */
-    public function handleSystemSignal(): void
+    public function handleSystemSignal($signo)
     {
         $this->stopWorkSignalReceived = true;
     }
@@ -320,7 +308,14 @@ class GearmanExecute extends AbstractGearmanService
         if ($timeout > 0) {
             $gearmanWorker->setTimeout($timeout * 1000);
         }
-
+        /**
+         * If the pcntl_signal exists, subscribe to the terminate and restart events for graceful worker stops.
+         */
+        if (false !== function_exists('pcntl_signal')) {
+            declare(ticks=1);
+            pcntl_signal(SIGTERM, [$this,"handleSystemSignal"]);
+            pcntl_signal(SIGHUP, [$this,"handleSystemSignal"]);
+        }
         /**
          * Executes GearmanWorker with all jobs defined
          */

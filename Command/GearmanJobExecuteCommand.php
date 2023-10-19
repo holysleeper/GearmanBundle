@@ -79,8 +79,6 @@ class GearmanJobExecuteCommand extends AbstractGearmanCommand
 
     protected function execute(InputInterface $input, OutputInterface $output)
     {
-        $this->gearmanExecute->addSystemSignalListener();
-
         /**@var QuestionHelper $question*/
         $question =  $this->getHelper('question');
 
